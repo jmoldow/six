@@ -730,6 +730,27 @@ def test_with_metaclass():
     assert X.__mro__ == (X, Base, Base2, object)
 
 
+def test_with_metaclass_temporary_class_has_no_bases():
+    """Test that the temporary class created by with_metaclass does not have any base classes (besides object).
+    
+    Doing so ensures that the creation of the temporary class has a minimal
+    impact on the program. For example, if there were bases, then:
+
+    - The temporary class will be added to their __subclasses__.
+    - (>= Python 3.6) __init_subclass__() will be called on each of the base
+      classes, which can execute arbitrary code.
+    """
+    class Meta(type):
+        pass
+    class Base(object):
+        def __init_subclass__(cls, *args, **kwargs):
+            assert False
+    temporary_class = six.with_metaclass(Meta, Base)
+    assert not Base.__subclasses__()
+    assert not issubclass(temporary_class, Base)
+    assert temporary_class.__mro__ == (temporary_class, object)
+
+
 def test_wraps():
     def f(g):
         @six.wraps(g)
